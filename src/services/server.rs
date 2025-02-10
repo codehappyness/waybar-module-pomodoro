@@ -112,14 +112,13 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
         let value = format_time(state.elapsed_time, state.get_current_time());
         let value_prefix = config.get_play_pause_icon(state.running);
         let tooltip = format!(
-            "{} pomodoro{} completed this session {}",
+            "{} pomodoro{} completed this session",
             state.session_completed,
             if state.session_completed > 1 || state.session_completed == 0 {
                 "s"
             } else {
                 ""
-            },
-            config.path_audio_break
+            }
         );
         let class = state.get_class();
         let cycle_icon = config.get_cycle_icon(state.is_break());
