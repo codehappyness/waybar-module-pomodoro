@@ -138,6 +138,7 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
 
         if state.running {
             state.increment_time();
+            state.set_audio_play(true);
         } else if state.play_audio {
             let path_audio = config.path_audio_break.clone();
             let _handle = thread::spawn(move || {
@@ -150,7 +151,7 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
                 stream_handle.stop();
             });
             //handle.join().unwrap();
-            state.set_audio_play(true);
+            state.set_audio_play(false);
         }
 
         if config.persist {

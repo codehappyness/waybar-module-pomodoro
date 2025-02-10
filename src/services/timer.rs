@@ -145,7 +145,6 @@ impl Timer {
             self.elapsed_millis = 0;
             self.elapsed_time += 1;
         }
-        self.play_audio = true;
     }
 }
 
