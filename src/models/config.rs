@@ -2,7 +2,7 @@ use crate::{
     models::message::Message, BREAK_ICON, LONG_BREAK_TIME, MINUTE, PAUSE_ICON, PLAY_ICON,
     SHORT_BREAK_TIME, WORK_ICON, WORK_TIME,
 };
-use std::env;
+use std::{env, path::PathBuf};
 
 pub const OPERATIONS: [&str; 4] = ["toggle", "start", "stop", "reset"];
 pub const SET_OPERATIONS: [&str; 3] = ["set-work", "set-short", "set-long"];
@@ -27,9 +27,7 @@ pub struct Config {
 
 impl Default for Config {
     fn default() -> Self {
-        let current_dir = env::current_dir().unwrap();
-        let file_path = current_dir.join("break.mp3");
-
+        let file_path = get_default_audio_path();
         Self {
             work_time: Default::default(),
             short_break: Default::default(),
@@ -48,7 +46,14 @@ impl Default for Config {
         }
     }
 }
-
+fn get_default_audio_path() -> PathBuf {
+    let home_dir = env::var("HOME").unwrap_or_else(|_| String::from("/home/user"));
+    PathBuf::from(home_dir)
+        .join(".config")
+        .join("waybar")
+        .join("pomodoro")
+        .join("break.mp3")
+}
 impl Config {
     pub fn from_options(options: Vec<String>) -> Self {
         let mut work_time: u16 = WORK_TIME;
@@ -66,8 +71,8 @@ impl Config {
 
         let binary_path = options.first().unwrap();
         let binary_name = binary_path.split('/').last().unwrap().to_string();
-        let current_dir = env::current_dir().unwrap();
-        let file_path = current_dir.join("break.mp3");
+
+        let file_path = get_default_audio_path();
         let audio_file = file_path.to_string_lossy().to_string();
 
         for opt in options.iter() {

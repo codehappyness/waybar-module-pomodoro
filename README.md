@@ -38,6 +38,9 @@ Include the module in your bar and you're set!
 
 You can check how many pomodoros you've completed this session by hovering the module and checking its tooltip.
 
+# Play audio 
+Put file.mp3 where /home/user/waybar/pomodoro/break.mp3
+
 # Options / arguments?
 
 ```
