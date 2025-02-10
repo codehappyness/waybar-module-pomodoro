@@ -3,11 +3,11 @@ use crate::{
     SHORT_BREAK_TIME, WORK_ICON, WORK_TIME,
 };
 use std::env;
-use std::path::PathBuf;
 
 pub const OPERATIONS: [&str; 4] = ["toggle", "start", "stop", "reset"];
 pub const SET_OPERATIONS: [&str; 3] = ["set-work", "set-short", "set-long"];
 
+#[derive(Clone)]
 pub struct Config {
     pub work_time: u16,
     pub short_break: u16,

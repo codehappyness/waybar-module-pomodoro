@@ -7,9 +7,6 @@ use crate::{
 
 use super::server::send_notification;
 
-use rodio::{OutputStream, Sink};
-use std::io::BufReader as AudioBufReader;
-use std::{fs::File, thread, time::Duration};
 pub enum CycleType {
     Work,
     ShortBreak,
@@ -25,6 +22,7 @@ pub struct Timer {
     pub iterations: u8,
     pub session_completed: u8,
     pub running: bool,
+    pub play_audio: bool, 
     pub socket_nr: i32,
 }
 
@@ -38,6 +36,7 @@ impl Timer {
             iterations: 0,
             session_completed: 0,
             running: false,
+            play_audio: false,
             socket_nr: socker_nr,
         }
     }
@@ -47,6 +46,7 @@ impl Timer {
         self.elapsed_time = 0;
         self.elapsed_millis = 0;
         self.iterations = 0;
+        self.play_audio = false;
         self.running = false;
     }
 
@@ -63,6 +63,10 @@ impl Timer {
             CycleType::LongBreak => self.times[2] = input * 60,
         }
         println!("{:?}", self.times);
+    }
+    pub fn set_audio_play(&mut self, value: bool) {
+        self.play_audio = value;
+
     }
 
     pub fn get_class(&self) -> String {
@@ -105,18 +109,6 @@ impl Timer {
                 self.iterations = 0;
                 // since we've gone through a long break, we've also completed a single pomodoro!
                 self.session_completed += 1;
-                //:whileself.play_audio(config);
-                let path_audio = config.path_audio_break.clone();
-
-                thread::spawn(move || {
-                    let _stream = OutputStream::try_default().unwrap();
-                    let stream_handle = Sink::try_new(&_stream.1).unwrap();
-                    let file = File::open(&path_audio).unwrap();
-                    let source = rodio::Decoder::new(AudioBufReader::new(file)).unwrap();
-                    stream_handle.append(source);
-                    thread::sleep(Duration::from_secs(5));
-                    stream_handle.stop();
-                });
             }
             // otherwise, run as normal
             else {
@@ -153,17 +145,7 @@ impl Timer {
             self.elapsed_millis = 0;
             self.elapsed_time += 1;
         }
-    }
-    fn play_audio(config: &Config, duration: Duration) {
-        let (_stream, stream_handle) = OutputStream::try_default().unwrap();
-        let sink = Sink::try_new(&stream_handle).unwrap();
-        let file = File::open(&config.path_audio_break).unwrap();
-        let source = rodio::Decoder::new(AudioBufReader::new(file)).unwrap();
-        sink.append(source);
-        //sink.sleep_until_end();
-
-        thread::sleep(duration);
-        sink.stop();
+        self.play_audio = true;
     }
 }
 

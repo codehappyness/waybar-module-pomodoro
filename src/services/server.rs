@@ -4,10 +4,7 @@ use std::{
     os::unix::net::{UnixListener, UnixStream},
     path::Path,
     sync::mpsc::{Receiver, Sender},
-    thread,
 };
-
-use notify_rust::Notification;
 
 use crate::{
     models::{config::Config, message::Message},
@@ -16,6 +13,10 @@ use crate::{
         consts::{HOUR, MINUTE, SLEEP_DURATION},
     },
 };
+use notify_rust::Notification;
+use rodio::{OutputStream, Sink};
+use std::io::BufReader as AudioBufReader;
+use std::{fs::File, thread, time::Duration};
 
 use super::{
     cache,
@@ -111,13 +112,14 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
         let value = format_time(state.elapsed_time, state.get_current_time());
         let value_prefix = config.get_play_pause_icon(state.running);
         let tooltip = format!(
-            "{} pomodoro{} completed this session",
+            "{} pomodoro{} completed this session {}",
             state.session_completed,
             if state.session_completed > 1 || state.session_completed == 0 {
                 "s"
             } else {
                 ""
-            }
+            },
+            config.path_audio_break
         );
         let class = state.get_class();
         let cycle_icon = config.get_cycle_icon(state.is_break());
@@ -136,6 +138,19 @@ fn handle_client(rx: Receiver<String>, socket_path: String, config: Config) {
 
         if state.running {
             state.increment_time();
+        } else if state.play_audio {
+            let path_audio = config.path_audio_break.clone();
+            let _handle = thread::spawn(move || {
+                let _stream = OutputStream::try_default().unwrap();
+                let stream_handle = Sink::try_new(&_stream.1).unwrap();
+                let file = File::open(path_audio).unwrap();
+                let source = rodio::Decoder::new(AudioBufReader::new(file)).unwrap();
+                stream_handle.append(source);
+                thread::sleep(Duration::from_secs(15));
+                stream_handle.stop();
+            });
+            //handle.join().unwrap();
+            state.set_audio_play(true);
         }
 
         if config.persist {
@@ -159,7 +174,8 @@ pub fn spawn_server(socket_path: &str, config: Config) {
     let (tx, rx): (Sender<String>, Receiver<String>) = std::sync::mpsc::channel();
     {
         let socket_path = socket_path.to_owned();
-        thread::spawn(|| handle_client(rx, socket_path, config));
+        let config_clone = config.clone();
+        thread::spawn(move || handle_client(rx, socket_path, config_clone));
     }
 
     for stream in listener.incoming() {
@@ -175,11 +191,14 @@ pub fn spawn_server(socket_path: &str, config: Config) {
                     delete_socket(socket_path);
                     break;
                 }
-                tx.send(message.to_string()).unwrap();
+                if let Err(e) = tx.send(message.to_string()) {
+                    eprintln!("Gửi tin nhắn thất bại: {}", e);
+                }
             }
             Err(err) => println!("Error: {}", err),
         }
     }
+    delete_socket(socket_path);
 }
 
 pub fn get_existing_sockets(binary_name: &str) -> Vec<String> {

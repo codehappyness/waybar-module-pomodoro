@@ -94,6 +94,7 @@ mod tests {
             iterations: 2,
             session_completed: 8,
             running: false,
+            play_audio: false,
             socket_nr: 0,
         }
     }
