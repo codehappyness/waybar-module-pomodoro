@@ -7,6 +7,9 @@ use crate::{
 
 use super::server::send_notification;
 
+use rodio::{OutputStream, Sink};
+use std::io::BufReader as AudioBufReader;
+use std::{fs::File, thread, time::Duration};
 pub enum CycleType {
     Work,
     ShortBreak,
@@ -102,6 +105,18 @@ impl Timer {
                 self.iterations = 0;
                 // since we've gone through a long break, we've also completed a single pomodoro!
                 self.session_completed += 1;
+                //:whileself.play_audio(config);
+                let path_audio = config.path_audio_break.clone();
+
+                thread::spawn(move || {
+                    let _stream = OutputStream::try_default().unwrap();
+                    let stream_handle = Sink::try_new(&_stream.1).unwrap();
+                    let file = File::open(&path_audio).unwrap();
+                    let source = rodio::Decoder::new(AudioBufReader::new(file)).unwrap();
+                    stream_handle.append(source);
+                    thread::sleep(Duration::from_secs(5));
+                    stream_handle.stop();
+                });
             }
             // otherwise, run as normal
             else {
@@ -128,7 +143,6 @@ impl Timer {
             }
         }
     }
-
     pub fn get_current_time(&self) -> u16 {
         self.times[self.current_index]
     }
@@ -139,6 +153,17 @@ impl Timer {
             self.elapsed_millis = 0;
             self.elapsed_time += 1;
         }
+    }
+    fn play_audio(config: &Config, duration: Duration) {
+        let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+        let sink = Sink::try_new(&stream_handle).unwrap();
+        let file = File::open(&config.path_audio_break).unwrap();
+        let source = rodio::Decoder::new(AudioBufReader::new(file)).unwrap();
+        sink.append(source);
+        //sink.sleep_until_end();
+
+        thread::sleep(duration);
+        sink.stop();
     }
 }
 
@@ -268,6 +293,7 @@ mod tests {
 
         timer.update_state(&config);
         assert_eq!(timer.current_index, 2); // Move to long break
+                                            //timer.play_audio(&config);
     }
 
     #[test]

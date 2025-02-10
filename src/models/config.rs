@@ -2,6 +2,8 @@ use crate::{
     models::message::Message, BREAK_ICON, LONG_BREAK_TIME, MINUTE, PAUSE_ICON, PLAY_ICON,
     SHORT_BREAK_TIME, WORK_ICON, WORK_TIME,
 };
+use std::env;
+use std::path::PathBuf;
 
 pub const OPERATIONS: [&str; 4] = ["toggle", "start", "stop", "reset"];
 pub const SET_OPERATIONS: [&str; 3] = ["set-work", "set-short", "set-long"];
@@ -20,10 +22,14 @@ pub struct Config {
     pub autob: bool,
     pub persist: bool,
     pub binary_name: String,
+    pub path_audio_break: String,
 }
 
 impl Default for Config {
     fn default() -> Self {
+        let current_dir = env::current_dir().unwrap();
+        let file_path = current_dir.join("break.mp3");
+
         Self {
             work_time: Default::default(),
             short_break: Default::default(),
@@ -38,6 +44,7 @@ impl Default for Config {
             autob: Default::default(),
             persist: Default::default(),
             binary_name: Default::default(),
+            path_audio_break: file_path.to_string_lossy().to_string(),
         }
     }
 }
@@ -59,6 +66,9 @@ impl Config {
 
         let binary_path = options.first().unwrap();
         let binary_name = binary_path.split('/').last().unwrap().to_string();
+        let current_dir = env::current_dir().unwrap();
+        let file_path = current_dir.join("break.mp3");
+        let audio_file = file_path.to_string_lossy().to_string();
 
         for opt in options.iter() {
             match opt.as_str() {
@@ -110,6 +120,7 @@ impl Config {
             autob,
             persist,
             binary_name,
+            path_audio_break: audio_file,
         }
     }
 
